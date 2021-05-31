@@ -37,6 +37,7 @@ class SystemInfoWorker:
         self.onChangeAsync = EventHookAsync()
         thread = Thread(target=self.__loop_in_thread__)
         thread.start()
+        self.__logger.info('Worker started')
 
     def __loop_in_thread__(self) -> None:
         eventLoop = asyncio.new_event_loop()
@@ -50,7 +51,6 @@ class SystemInfoWorker:
         while True:
             unix_seconds = int(time())
             if unix_seconds % self.__read_tick == 0 and previous_tick != unix_seconds:
-                self.__logger.debug("Get periodic info")
                 info = self.get_periodic_system_info()
                 info["time"] = unix_seconds * 1000
                 while len(self.__queue["periodic"]) >= self.__queue_size:

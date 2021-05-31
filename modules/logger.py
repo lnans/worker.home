@@ -1,5 +1,6 @@
 import logging
 import sys
+from configparser import ConfigParser
 from pathlib import Path
 from logging.handlers import TimedRotatingFileHandler
 
@@ -16,7 +17,9 @@ class AppLogger:
     __log_dir: str
 
     def __init__(self) -> None:
-        self.__log_dir = 'logs'
+        config = ConfigParser()
+        config.read('.config.ini')
+        self.__log_dir = config.get('Settings', 'LogDir')
         self.__log_formatter = logging.Formatter(
             '%(asctime)s|%(name)s|%(levelname)s|%(message)s')
         Path(self.__log_dir).mkdir(exist_ok=True)

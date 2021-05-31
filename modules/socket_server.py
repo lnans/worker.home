@@ -3,7 +3,7 @@ from logging import Logger
 from modules.logger import AppLogger
 from modules.system_worker import SystemInfoWorker
 from websockets.legacy.server import WebSocketServerProtocol
-from websockets.exceptions import ConnectionClosedError
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 
 class WebSocketServer:
@@ -43,6 +43,8 @@ class WebSocketServer:
         await self.register_client(ws)
         try:
             await ws.recv()
+        except ConnectionClosedOK:
+            pass
         except ConnectionClosedError:
             pass
         finally:
