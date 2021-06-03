@@ -5,7 +5,6 @@ import configparser
 PARSER = configparser.ConfigParser()
 PARSER.read('.config.ini')
 
-
 class Config:
     """
         Config Wrapper to get values in the .config.ini file

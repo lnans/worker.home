@@ -4,7 +4,6 @@ import cpuinfo
 import distro
 import platform
 import json
-from logging import Logger
 from modules.event import EventHookAsync
 from modules.logger import AppLogger
 from time import time
@@ -25,7 +24,7 @@ class SystemInfoWorker:
     __read_tick: int
     __queue_size: int
     __queue: dict
-    __logger: Logger
+    __logger: AppLogger
     __net_recv_old: int
     __net_sent_old: int
     __current_tick: int
@@ -33,7 +32,7 @@ class SystemInfoWorker:
     onChangeAsync: EventHookAsync
 
     def __init__(self, read_tick=2, queue_size=30) -> None:
-        self.__logger = AppLogger().get_logger(type(self).__name__)
+        self.__logger = AppLogger(type(self).__name__)
         self.__read_tick = read_tick
         self.__queue_size = queue_size
         self.__queue = {"static": {}, "periodic": []}
@@ -99,7 +98,8 @@ class SystemInfoWorker:
         for proc in psutil.process_iter(['pid', 'name', 'username', 'memory_percent', 'cpu_percent', 'create_time']):
             info = proc.info
             info['create_time'] = int(info['create_time'] * 1000)
-            info['memory_used'] = int(info['memory_percent'] * memory_info['total'])
+            info['memory_used'] = int(
+                info['memory_percent'] * memory_info['total'])
             processes.append(info)
 
         system_info = {

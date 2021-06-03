@@ -1,26 +1,39 @@
 from asyncio import wait
-from logging import Logger
+from ssl import SSLContext
 from modules.logger import AppLogger
 from modules.system_worker import SystemInfoWorker
-from websockets.legacy.server import WebSocketServerProtocol
+from websockets.legacy.server import WebSocketServerProtocol, Serve
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
-class WebSocketServer:
+
+class WebSocketServerSecure:
     """
         Web socket server
         Handle multiple client connection
         Use to send system hardware information on connected clients
     """
 
-    __logger: Logger
+    __host: str
+    __port: int
+    __ssl_context: SSLContext
+    __logger: AppLogger
     __system_worker: SystemInfoWorker
     __clients: set
 
-    def __init__(self) -> None:
-        self.__logger = AppLogger().get_logger(type(self).__name__)
+    def __init__(self, host: str, port: int, ssl_context: SSLContext) -> None:
+        self.__logger = AppLogger(type(self).__name__)
         self.__clients = set()
+        self.__host = host
+        self.__port = port
+        self.__ssl_context = ssl_context
         self.__system_worker = SystemInfoWorker()
         self.__system_worker.onChangeAsync += self.send_to_clients
+
+    """ Starting server and infinite wait """
+    async def start(self) -> None:
+        server = await Serve(self.connection_handler, self.__host, self.__port, ssl=self.__ssl_context)
+        self.__logger.info(f'Web socket server started on [wss://{self.__host}:{self.__port}]')
+        await server.wait_closed()
 
     """ Register a new client """
     async def register_client(self, ws: WebSocketServerProtocol) -> None:
