@@ -4,24 +4,22 @@ import os
 import websockets
 import ssl
 from pathlib import Path
-from configparser import ConfigParser
+from modules.config import Config
 from modules.socket_server import WebSocketServer
 from modules.logger import AppLogger
 
 MAIN_DIR = Path(__file__).resolve().parent
 LOGGER = AppLogger().get_logger('Main')
-CONFIG = ConfigParser()
 
 async def main():
     LOGGER.info('Application started')
 
     # Reading conf
     LOGGER.info('Reading CONF')
-    CONFIG.read('.config.ini')
-    host = CONFIG.get('Server', 'Host')
-    port = CONFIG.getint('Server', 'Port')
-    ssl_cert = CONFIG.get('Server', 'SslCrt')
-    ssl_key = CONFIG.get('Server', 'SslKey')
+    host = Config.get('Server', 'Host')
+    port = Config.get_int('Server', 'Port')
+    ssl_cert = Config.get('Server', 'SslCrt')
+    ssl_key = Config.get('Server', 'SslKey')
 
     # Load SSL context
     LOGGER.info('Load SSL configuration')
