@@ -94,6 +94,14 @@ class SystemInfoWorker:
         self.__net_sent_old = new_bytes_sent
         self.__net_recv_old = new_bytes_recv
 
+        # Process
+        processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'username', 'memory_percent', 'cpu_percent', 'create_time']):
+            info = proc.info
+            info['create_time'] = int(info['create_time'] * 1000)
+            info['memory_used'] = int(info['memory_percent'] * memory_info['total'])
+            processes.append(info)
+
         system_info = {
             "memoryInfo": memory_info,
             "cpuInfo": {
@@ -106,6 +114,7 @@ class SystemInfoWorker:
                 "sentPerSec": int(bytes_sent / self.__read_tick),
                 "recvPerSec": int(bytes_recv / self.__read_tick)
             },
+            "processInfo": processes,
             "diskInfo": disk_infos
         }
 
