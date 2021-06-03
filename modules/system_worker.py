@@ -26,6 +26,9 @@ class SystemInfoWorker:
     __queue_size: int
     __queue: dict
     __logger: Logger
+    __net_recv_old: int
+    __net_sent_old: int
+    __current_tick: int
 
     onChangeAsync: EventHookAsync
 
@@ -46,11 +49,13 @@ class SystemInfoWorker:
     async def start_worker(self) -> None:
         """ Start the periodic worker, this function fire an event every `readTick` seconds """
 
-        previous_tick = 0
+        self.__current_tick = 0
+        self.__net_recv_old = 0
+        self.__net_sent_old = 0
         self.__queue["static"] = self.get_static_system_info()
         while True:
             unix_seconds = int(time())
-            if unix_seconds % self.__read_tick == 0 and previous_tick != unix_seconds:
+            if unix_seconds % self.__read_tick == 0 and self.__current_tick != unix_seconds:
                 info = self.get_periodic_system_info()
                 info["time"] = unix_seconds * 1000
                 while len(self.__queue["periodic"]) >= self.__queue_size:
@@ -58,24 +63,36 @@ class SystemInfoWorker:
 
                 self.__queue["periodic"].append(info)
                 await self.onChangeAsync.invoke_async(json.dumps(self.__queue))
-                previous_tick = unix_seconds
+                self.__current_tick = unix_seconds
             await asyncio.sleep(0.1)  # to keep low CPU load
 
     def get_periodic_system_info(self) -> dict:
         """ Get hardare information which change over time """
 
+        # Memory
         memory_info = psutil.virtual_memory()._asdict()
+
+        # CPU
         cpu_freq = psutil.cpu_freq()._asdict()
         cpu_percent = psutil.cpu_percent()
         cpu_cores = psutil.cpu_count(logical=False)
         cpu_threads = psutil.cpu_count(logical=True)
 
+        # Disk
         host_partitions = psutil.disk_partitions()
         disk_infos = []
         for partitions in host_partitions:
             current = psutil.disk_usage(partitions.mountpoint)._asdict()
             current["mountpoint"] = partitions.mountpoint
             disk_infos.append(current)
+
+        # Network
+        new_bytes_sent = psutil.net_io_counters().bytes_sent
+        new_bytes_recv = psutil.net_io_counters().bytes_recv
+        bytes_sent = new_bytes_sent - self.__net_sent_old if self.__net_sent_old else 0
+        bytes_recv = new_bytes_recv - self.__net_recv_old if self.__net_recv_old else 0
+        self.__net_sent_old = new_bytes_sent
+        self.__net_recv_old = new_bytes_recv
 
         system_info = {
             "memoryInfo": memory_info,
@@ -84,6 +101,10 @@ class SystemInfoWorker:
                 "percent": int(cpu_percent),
                 "cores": cpu_cores,
                 "threads": cpu_threads
+            },
+            "networkInfo": {
+                "sentPerSec": int(bytes_sent / self.__read_tick),
+                "recvPerSec": int(bytes_recv / self.__read_tick)
             },
             "diskInfo": disk_infos
         }

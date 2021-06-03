@@ -4,6 +4,7 @@ from modules.logger import AppLogger
 from modules.system_worker import SystemInfoWorker
 from websockets.legacy.server import WebSocketServerProtocol
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
+import pickle
 
 
 class WebSocketServer:
