@@ -19,7 +19,7 @@ class AppLogger:
     def __init__(self) -> None:
         config = ConfigParser()
         config.read('.config.ini')
-        self.__log_dir = config.get('Settings', 'LogDir')
+        self.__log_dir = config.get('Logs', 'LogDir')
         self.__log_formatter = logging.Formatter(
             '%(asctime)s|%(name)s|%(levelname)s|%(message)s')
         Path(self.__log_dir).mkdir(exist_ok=True)
